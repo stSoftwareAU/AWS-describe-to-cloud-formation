@@ -19,9 +19,8 @@ exports.handler = async(event) => {
         }
 
     }
-    let lsg=event['SecurityGroups'];
-    if( lsg)
-    {
+    let lsg = event['SecurityGroups'];
+    if (lsg) {
         let len = lsg.length;
         for (let i = 0; i < len; i++) {
             securityGroup(resourses, lsg[i]);
@@ -43,7 +42,7 @@ exports.handler = async(event) => {
 function safeName(name) {
 
     let tmpName = name.replace(/[^a-zA-Z0-9]/g, " ");
-    tmpName=tmpName
+    tmpName = tmpName
         .split(' ')
         .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
         .join('');
@@ -82,119 +81,108 @@ function launchTemplateVersions(resources, ltv) {
     }
 }
 
-let sgCount=0;
+let sgCount = 0;
+
 function securityGroup(resources, sg) {
 
-    let sgName="sg" + sgCount++;
-    
+    let sgName = "sg" + sgCount++;
+
     let item = {};
     item.Type = "AWS::EC2::SecurityGroup";
     item.Properties = {};
 
-    if( sg.GroupName)
-    {
-        sgName=sg.GroupName;
-        item.Properties.GroupName=sg.GroupName;
+    if (sg.GroupName) {
+        sgName = sg.GroupName;
+        item.Properties.GroupName = sg.GroupName;
     }
-    if( sg.Description)
-    {
-        item.Properties.GroupDescription=sg.Description;
+    if (sg.Description) {
+        item.Properties.GroupDescription = sg.Description;
     }
 
-    item.Properties.VpcId=sg.VpcId;    
-    if( sg.IpPermissions)
-    {
+    item.Properties.VpcId = sg.VpcId;
+    if (sg.IpPermissions) {
         let len = sg.IpPermissions.length;
-        let arr=[];
-        item.Properties.SecurityGroupIngress=arr;
-        for( let i=0;i<len; i++)
-        {
-            let ipPermission=sg.IpPermissions[i];
-            
-            let rangeCount=ipPermission.IpRanges.length;
-            
-            for( let r=0;r < rangeCount;r++)
-            {
-                let ipRange=ipPermission.IpRanges[r];
-                
-                let item={};
-                item.IpProtocol=ipPermission.IpProtocol;
-                item.FromPort=ipPermission.FromPort;
-                item.ToPort=ipPermission.ToPort;
-                item.CidrIp=ipRange.CidrIp;
-                item.Description=ipRange.Description;
+        let arr = [];
+        item.Properties.SecurityGroupIngress = arr;
+        for (let i = 0; i < len; i++) {
+            let ipPermission = sg.IpPermissions[i];
+
+            let rangeCount = ipPermission.IpRanges.length;
+
+            for (let r = 0; r < rangeCount; r++) {
+                let ipRange = ipPermission.IpRanges[r];
+
+                let item = {};
+                item.IpProtocol = ipPermission.IpProtocol;
+                item.FromPort = ipPermission.FromPort;
+                item.ToPort = ipPermission.ToPort;
+                item.CidrIp = ipRange.CidrIp;
+                item.Description = ipRange.Description;
                 arr.push(item);
             }
-            
-            let userCount=ipPermission.IpRanges.length;
-            
-            for( let u=0;u < rangeCount;u++)
-            {
-                let userIdGroupPair=ipPermission.UserIdGroupPairs[u];
-                
-                let item={};
-                item.IpProtocol=ipPermission.IpProtocol;
-                item.FromPort=ipPermission.FromPort;
-                item.ToPort=ipPermission.ToPort;
-                item.SourceSecurityGroupId=userIdGroupPair.GroupId;
-                item.Description=userIdGroupPair.Description;
+
+            let userCount = ipPermission.UserIdGroupPairs.length;
+
+            for (let u = 0; u < userCount; u++) {
+                let userIdGroupPair = ipPermission.UserIdGroupPairs[u];
+
+                let item = {};
+                item.IpProtocol = ipPermission.IpProtocol;
+                item.FromPort = ipPermission.FromPort;
+                item.ToPort = ipPermission.ToPort;
+                item.SourceSecurityGroupId = userIdGroupPair.GroupId;
+                item.Description = userIdGroupPair.Description;
                 arr.push(item);
             }
         }
-        
+
     }
-    
-    if( sg.IpPermissionsEgress)
-    {
+
+    if (sg.IpPermissionsEgress) {
         let len = sg.IpPermissionsEgress.length;
-        let arr=[];
-        item.Properties.SecurityGroupEgress=arr;
-        for( let i=0;i<len; i++)
-        {
-            let ipPermission=sg.IpPermissionsEgress[i];
-            
-            let rangeCount=ipPermission.IpRanges.length;
-            
-            for( let r=0;r < rangeCount;r++)
-            {
-                let ipRange=ipPermission.IpRanges[r];
-                
-                let tmp={};
-                tmp.IpProtocol=ipPermission.IpProtocol;
-                tmp.FromPort=ipPermission.FromPort;
-                tmp.ToPort=ipPermission.ToPort;
-                tmp.CidrIp=ipRange.CidrIp;
-                tmp.Description=ipRange.Description;
+        let arr = [];
+        item.Properties.SecurityGroupEgress = arr;
+        for (let i = 0; i < len; i++) {
+            let ipPermission = sg.IpPermissionsEgress[i];
+
+            let rangeCount = ipPermission.IpRanges.length;
+
+            for (let r = 0; r < rangeCount; r++) {
+                let ipRange = ipPermission.IpRanges[r];
+
+                let tmp = {};
+                tmp.IpProtocol = ipPermission.IpProtocol;
+                tmp.FromPort = ipPermission.FromPort;
+                tmp.ToPort = ipPermission.ToPort;
+                tmp.CidrIp = ipRange.CidrIp;
+                tmp.Description = ipRange.Description;
                 arr.push(tmp);
             }
-    
-            let userCount=ipPermission.IpRanges.length;
-            
-            for( let u=0;u < rangeCount;u++)
-            {
-                let userIdGroupPair=ipPermission.UserIdGroupPairs[u];
-                
-                let item={};
-                item.IpProtocol=ipPermission.IpProtocol;
-                item.FromPort=ipPermission.FromPort;
-                item.ToPort=ipPermission.ToPort;
-                item.SourceSecurityGroupId=userIdGroupPair.GroupId;
-                item.Description=userIdGroupPair.Description;
+
+            let userCount = ipPermission.UserIdGroupPairs.length;
+
+            for (let u = 0; u < userCount; u++) {
+                let userIdGroupPair = ipPermission.UserIdGroupPairs[u];
+
+                let item = {};
+                item.IpProtocol = ipPermission.IpProtocol;
+                item.FromPort = ipPermission.FromPort;
+                item.ToPort = ipPermission.ToPort;
+                item.SourceSecurityGroupId = userIdGroupPair.GroupId;
+                item.Description = userIdGroupPair.Description;
                 arr.push(item);
-            }            
+            }
         }
     }
 
-    copyTags( sg, item.Properties);
-    
+    copyTags(sg, item.Properties);
+
     resources['securityGroup' + safeName(sgName)] = item;
 }
 
-function copyTags( from, to)
-{
-    if( from.Tags)
-    {
-        to.Tags=from.Tags.filter( item => !item.Key.startsWith( "aws:cloudformation:"));
+function copyTags(from, to) {
+    if (from.Tags) {
+        to.Tags = from.Tags.filter(item => !item.Key.startsWith("aws:cloudformation:"));
     }
-    
+
 }
