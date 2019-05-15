@@ -1,4 +1,4 @@
-# AWS CLI descripe-* -> Cloud formation
+# AWS CLI describe-* -> Cloud formation
 Convert AWS cli describe to cloud formation
 ```bash
 sudo yum install jq
