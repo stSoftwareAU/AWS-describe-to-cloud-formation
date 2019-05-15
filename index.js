@@ -81,6 +81,7 @@ function launchTemplateVersions(resources, ltv) {
         resources['LaunchTemplate' + safeName(ltv.LaunchTemplateName)] = item;
     }
 }
+
 let sgCount=0;
 function securityGroup(resources, sg) {
 
@@ -124,6 +125,21 @@ function securityGroup(resources, sg) {
                 item.Description=ipRange.Description;
                 arr.push(item);
             }
+            
+            let userCount=ipPermission.IpRanges.length;
+            
+            for( let u=0;u < rangeCount;u++)
+            {
+                let userIdGroupPair=ipPermission.UserIdGroupPairs[u];
+                
+                let item={};
+                item.IpProtocol=ipPermission.IpProtocol;
+                item.FromPort=ipPermission.FromPort;
+                item.ToPort=ipPermission.ToPort;
+                item.SourceSecurityGroupId=userIdGroupPair.GroupId;
+                item.Description=userIdGroupPair.Description;
+                arr.push(item);
+            }
         }
         
     }
@@ -151,6 +167,21 @@ function securityGroup(resources, sg) {
                 tmp.Description=ipRange.Description;
                 arr.push(tmp);
             }
+    
+            let userCount=ipPermission.IpRanges.length;
+            
+            for( let u=0;u < rangeCount;u++)
+            {
+                let userIdGroupPair=ipPermission.UserIdGroupPairs[u];
+                
+                let item={};
+                item.IpProtocol=ipPermission.IpProtocol;
+                item.FromPort=ipPermission.FromPort;
+                item.ToPort=ipPermission.ToPort;
+                item.SourceSecurityGroupId=userIdGroupPair.GroupId;
+                item.Description=userIdGroupPair.Description;
+                arr.push(item);
+            }            
         }
     }
 
