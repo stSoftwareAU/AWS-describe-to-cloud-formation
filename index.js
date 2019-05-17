@@ -26,6 +26,14 @@ exports.handler = async(event) => {
             securityGroup(resourses, lsg[i]);
         }
     }
+    
+    let las = event['AutoScalingGroups'];
+    if (las) {
+        let len = las.length;
+        for (let i = 0; i < len; i++) {
+            autoScaleGroup(resourses, las[i]);
+        }
+    }
 
     let responseCode = 200;
 
@@ -185,4 +193,22 @@ function copyTags(from, to) {
         to.Tags = from.Tags.filter(item => !item.Key.startsWith("aws:cloudformation:"));
     }
 
+}
+
+
+function autoScaleGroup(resources, e) {
+
+    let resource = {};
+    resource.Type = "AWS::AutoScaling::AutoScalingGroup";
+    let p=JSON.parse(JSON.stringify(e));
+    resource.Properties = p;
+    
+    const removeItems=["Tags","AutoScalingGroupARN","TargetGroupARNs","SuspendedProcesses","EnabledMetrics","DefaultCooldown","Instances","CreatedTime","NewInstancesProtectedFromScaleIn"];
+    removeItems.forEach( key=>delete p[key]);
+    
+    p.Cooldown=e.DefaultCooldown;
+    
+    copyTags(e, p);
+    
+    resources['autoScalingGroup' + safeName(e.AutoScalingGroupName)] = resource;
 }
