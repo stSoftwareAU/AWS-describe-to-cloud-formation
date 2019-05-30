@@ -12,3 +12,4 @@ curl -X POST https://2d8ayd4x0e.execute-api.ap-southeast-2.amazonaws.com/test -d
 2. aws autoscaling describe-auto-scaling-groups
 3. aws ec2 describe-vpcs
 4. aws ec2 describe-security-groups
+5. aws ec2 describe-subnets
