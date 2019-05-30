@@ -1,214 +1,266 @@
-exports.handler = async(event) => {
+exports.handler = async (event) => {
 
-    console.info(event);
+  console.info(event);
 
-    let resourses = {};
+  let resourses = {};
 
-    let responseBody = {
-        "AWSTemplateFormatVersion": "2010-09-09",
-        "Resources": resourses
-    };
+  let responseBody = {
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": resourses
+  };
 
-    let ltv = event['LaunchTemplateVersions'];
+  let ltv = event['LaunchTemplateVersions'];
 
-    if (ltv) {
+  if (ltv) {
 
-        let len = ltv.length;
-        for (let i = 0; i < len; i++) {
-            launchTemplateVersions(resourses, ltv[i]);
-        }
-
-    }
-    let lsg = event['SecurityGroups'];
-    if (lsg) {
-        let len = lsg.length;
-        for (let i = 0; i < len; i++) {
-            securityGroup(resourses, lsg[i]);
-        }
-    }
-    
-    let las = event['AutoScalingGroups'];
-    if (las) {
-        let len = las.length;
-        for (let i = 0; i < len; i++) {
-            autoScaleGroup(resourses, las[i]);
-        }
+    let len = ltv.length;
+    for (let i = 0; i < len; i++) {
+      launchTemplateVersions(resourses, ltv[i]);
     }
 
-    let responseCode = 200;
+  }
+  let lsg = event['SecurityGroups'];
+  if (lsg) {
+    let len = lsg.length;
+    for (let i = 0; i < len; i++) {
+      securityGroup(resourses, lsg[i]);
+    }
+  }
 
-    let response = {
-        statusCode: responseCode,
+  let las = event['AutoScalingGroups'];
+  if (las) {
+    let len = las.length;
+    for (let i = 0; i < len; i++) {
+      autoScaleGroup(resourses, las[i]);
+    }
+  }
 
-        //        body: JSON.stringify(responseBody)
-        body: responseBody
-    };
-    console.log("response: " + JSON.stringify(response))
-    return response;
+
+  let vpcs = event['Vpcs'];
+  if (vpcs) {
+    let len = vpcs.length;
+    for (let i = 0; i < len; i++) {
+      virtualPrivateCloud(resourses, vpcs[i]);
+    }
+  }
+
+  let responseCode = 200;
+
+  let response = {
+    statusCode: responseCode,
+
+    //        body: JSON.stringify(responseBody)
+    body: responseBody
+  };
+  console.log("response: " + JSON.stringify(response))
+  return response;
 };
 
 function safeName(name) {
 
-    let tmpName = name.replace(/[^a-zA-Z0-9]/g, " ");
-    tmpName = tmpName
-        .split(' ')
-        .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-        .join('');
+  let tmpName = name.replace(/[^a-zA-Z0-9]/g, " ");
+  tmpName = tmpName
+    .split(' ')
+    .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+    .join('');
 
-    return tmpName;
+  return tmpName;
 }
 
 function b64Value(b64) {
 
-    let buff = new Buffer(b64, 'base64');
-    let text = buff.toString('ascii');
+  let buff = new Buffer(b64, 'base64');
+  let text = buff.toString('ascii');
 
-    let joinObj = {
-        "Fn::Join": ["\n", text.split('\n')]
-    };
+  let joinObj = {
+    "Fn::Join": ["\n", text.split('\n')]
+  };
 
-    let obj = { "Fn::Base64": joinObj };
+  let obj = {
+    "Fn::Base64": joinObj
+  };
 
-    return obj;
+  return obj;
 }
 
 
 function launchTemplateVersions(resources, ltv) {
 
-    if (ltv.DefaultVersion) {
+  if (ltv.DefaultVersion) {
 
-        let item = {};
-        item.Type = "AWS::EC2::LaunchTemplate";
-        item.Properties = {};
-        item.Properties.LaunchTemplateName = ltv.LaunchTemplateName;
+    let item = {};
+    item.Type = "AWS::EC2::LaunchTemplate";
+    item.Properties = {};
+    item.Properties.LaunchTemplateName = ltv.LaunchTemplateName;
 
-        item.Properties.LaunchTemplateData = ltv.LaunchTemplateData;
-        item.Properties.LaunchTemplateData.UserData = b64Value(ltv.LaunchTemplateData.UserData);
+    item.Properties.LaunchTemplateData = ltv.LaunchTemplateData;
+    item.Properties.LaunchTemplateData.UserData = b64Value(ltv.LaunchTemplateData.UserData);
 
-        resources['LaunchTemplate' + safeName(ltv.LaunchTemplateName)] = item;
-    }
+    resources['LaunchTemplate' + safeName(ltv.LaunchTemplateName)] = item;
+  }
 }
 
 let sgCount = 0;
 
 function securityGroup(resources, sg) {
 
-    let sgName = "sg" + sgCount++;
+  let sgName = "sg" + sgCount++;
 
-    let item = {};
-    item.Type = "AWS::EC2::SecurityGroup";
-    item.Properties = {};
+  let item = {};
+  item.Type = "AWS::EC2::SecurityGroup";
+  item.Properties = {};
 
-    if (sg.GroupName) {
-        sgName = sg.GroupName;
-        item.Properties.GroupName = sg.GroupName;
-    }
-    if (sg.Description) {
-        item.Properties.GroupDescription = sg.Description;
-    }
+  if (sg.GroupName) {
+    sgName = sg.GroupName;
+    item.Properties.GroupName = sg.GroupName;
+  }
+  if (sg.Description) {
+    item.Properties.GroupDescription = sg.Description;
+  }
 
-    item.Properties.VpcId = sg.VpcId;
-    if (sg.IpPermissions) {
-        let len = sg.IpPermissions.length;
-        let arr = [];
-        item.Properties.SecurityGroupIngress = arr;
-        for (let i = 0; i < len; i++) {
-            let ipPermission = sg.IpPermissions[i];
+  item.Properties.VpcId = sg.VpcId;
+  if (sg.IpPermissions) {
+    let len = sg.IpPermissions.length;
+    let arr = [];
+    item.Properties.SecurityGroupIngress = arr;
+    for (let i = 0; i < len; i++) {
+      let ipPermission = sg.IpPermissions[i];
 
-            let rangeCount = ipPermission.IpRanges.length;
+      let rangeCount = ipPermission.IpRanges.length;
 
-            for (let r = 0; r < rangeCount; r++) {
-                let ipRange = ipPermission.IpRanges[r];
+      for (let r = 0; r < rangeCount; r++) {
+        let ipRange = ipPermission.IpRanges[r];
 
-                let item = {};
-                item.IpProtocol = ipPermission.IpProtocol;
-                item.FromPort = ipPermission.FromPort;
-                item.ToPort = ipPermission.ToPort;
-                item.CidrIp = ipRange.CidrIp;
-                item.Description = ipRange.Description;
-                arr.push(item);
-            }
+        let item = {};
+        item.IpProtocol = ipPermission.IpProtocol;
+        item.FromPort = ipPermission.FromPort;
+        item.ToPort = ipPermission.ToPort;
+        item.CidrIp = ipRange.CidrIp;
+        item.Description = ipRange.Description;
+        arr.push(item);
+      }
 
-            let userCount = ipPermission.UserIdGroupPairs.length;
+      let userCount = ipPermission.UserIdGroupPairs.length;
 
-            for (let u = 0; u < userCount; u++) {
-                let userIdGroupPair = ipPermission.UserIdGroupPairs[u];
+      for (let u = 0; u < userCount; u++) {
+        let userIdGroupPair = ipPermission.UserIdGroupPairs[u];
 
-                let item = {};
-                item.IpProtocol = ipPermission.IpProtocol;
-                item.FromPort = ipPermission.FromPort;
-                item.ToPort = ipPermission.ToPort;
-                item.SourceSecurityGroupId = userIdGroupPair.GroupId;
-                item.Description = userIdGroupPair.Description;
-                arr.push(item);
-            }
-        }
-
+        let item = {};
+        item.IpProtocol = ipPermission.IpProtocol;
+        item.FromPort = ipPermission.FromPort;
+        item.ToPort = ipPermission.ToPort;
+        item.SourceSecurityGroupId = userIdGroupPair.GroupId;
+        item.Description = userIdGroupPair.Description;
+        arr.push(item);
+      }
     }
 
-    if (sg.IpPermissionsEgress) {
-        let len = sg.IpPermissionsEgress.length;
-        let arr = [];
-        item.Properties.SecurityGroupEgress = arr;
-        for (let i = 0; i < len; i++) {
-            let ipPermission = sg.IpPermissionsEgress[i];
+  }
 
-            let rangeCount = ipPermission.IpRanges.length;
+  if (sg.IpPermissionsEgress) {
+    let len = sg.IpPermissionsEgress.length;
+    let arr = [];
+    item.Properties.SecurityGroupEgress = arr;
+    for (let i = 0; i < len; i++) {
+      let ipPermission = sg.IpPermissionsEgress[i];
 
-            for (let r = 0; r < rangeCount; r++) {
-                let ipRange = ipPermission.IpRanges[r];
+      let rangeCount = ipPermission.IpRanges.length;
 
-                let tmp = {};
-                tmp.IpProtocol = ipPermission.IpProtocol;
-                tmp.FromPort = ipPermission.FromPort;
-                tmp.ToPort = ipPermission.ToPort;
-                tmp.CidrIp = ipRange.CidrIp;
-                tmp.Description = ipRange.Description;
-                arr.push(tmp);
-            }
+      for (let r = 0; r < rangeCount; r++) {
+        let ipRange = ipPermission.IpRanges[r];
 
-            let userCount = ipPermission.UserIdGroupPairs.length;
+        let tmp = {};
+        tmp.IpProtocol = ipPermission.IpProtocol;
+        tmp.FromPort = ipPermission.FromPort;
+        tmp.ToPort = ipPermission.ToPort;
+        tmp.CidrIp = ipRange.CidrIp;
+        tmp.Description = ipRange.Description;
+        arr.push(tmp);
+      }
 
-            for (let u = 0; u < userCount; u++) {
-                let userIdGroupPair = ipPermission.UserIdGroupPairs[u];
+      let userCount = ipPermission.UserIdGroupPairs.length;
 
-                let item = {};
-                item.IpProtocol = ipPermission.IpProtocol;
-                item.FromPort = ipPermission.FromPort;
-                item.ToPort = ipPermission.ToPort;
-                item.SourceSecurityGroupId = userIdGroupPair.GroupId;
-                item.Description = userIdGroupPair.Description;
-                arr.push(item);
-            }
-        }
+      for (let u = 0; u < userCount; u++) {
+        let userIdGroupPair = ipPermission.UserIdGroupPairs[u];
+
+        let item = {};
+        item.IpProtocol = ipPermission.IpProtocol;
+        item.FromPort = ipPermission.FromPort;
+        item.ToPort = ipPermission.ToPort;
+        item.SourceSecurityGroupId = userIdGroupPair.GroupId;
+        item.Description = userIdGroupPair.Description;
+        arr.push(item);
+      }
     }
+  }
 
-    copyTags(sg, item.Properties);
+  copyTags(sg, item.Properties);
 
-    resources['securityGroup' + safeName(sgName)] = item;
+  resources['securityGroup' + safeName(sgName)] = item;
 }
 
 function copyTags(from, to) {
-    if (from.Tags) {
-        to.Tags = from.Tags.filter(item => !item.Key.startsWith("aws:cloudformation:"));
-    }
+  if (from.Tags) {
+    to.Tags = from.Tags.filter(item => !item.Key.startsWith("aws:cloudformation:"));
+  }
 
 }
 
 
 function autoScaleGroup(resources, e) {
 
-    let resource = {};
-    resource.Type = "AWS::AutoScaling::AutoScalingGroup";
-    let p=JSON.parse(JSON.stringify(e));
-    resource.Properties = p;
-    
-    const removeItems=["Tags","AutoScalingGroupARN","TargetGroupARNs","SuspendedProcesses","EnabledMetrics","DefaultCooldown","Instances","CreatedTime","NewInstancesProtectedFromScaleIn"];
-    removeItems.forEach( key=>delete p[key]);
-    
-    p.Cooldown=e.DefaultCooldown;
-    
-    copyTags(e, p);
-    
-    resources['autoScalingGroup' + safeName(e.AutoScalingGroupName)] = resource;
+  let resource = {};
+  resource.Type = "AWS::AutoScaling::AutoScalingGroup";
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+
+  const removeItems = ["Tags", "AutoScalingGroupARN", "TargetGroupARNs", "SuspendedProcesses", "EnabledMetrics", "DefaultCooldown", "Instances", "CreatedTime", "NewInstancesProtectedFromScaleIn"];
+  removeItems.forEach(key => delete p[key]);
+
+  p.Cooldown = e.DefaultCooldown;
+
+  copyTags(e, p);
+
+  resources['autoScalingGroup' + safeName(e.AutoScalingGroupName)] = resource;
+}
+
+function makeNameFromTags(e, defaultName) {
+  let name = "";
+  if (e.Tags) {
+    let len = e.Tags.length;
+    for( i=0;i< len;i++)
+    {
+      let tag=e.Tags[i];
+
+      if( tag.Key == "Name")
+      {
+        name=tag.Value;
+        break;
+      }
+    }
+  }
+
+  if (!name) {
+    name = defaultName;
+  }
+  return name;
+}
+
+let vpcCount = 0;
+
+function virtualPrivateCloud(resources, e) {
+
+  vpcCount++;
+  let name = makeNameFromTags(e, "vpc" + vpcCount);
+
+  let resource = {};
+  resource.Type = "AWS::EC2::VPC";
+  let p = {};
+  resource.Properties = p;
+
+  p.CidrBlock=e.CidrBlock;
+  p.InstanceTenancy=e.InstanceTenancy;
+  copyTags(e, p);
+
+  resources['vpc' + safeName(name)] = resource;
 }
