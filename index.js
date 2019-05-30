@@ -44,6 +44,11 @@ exports.handler = async (event) => {
     }
   }
 
+  let subnets = event['Subnets'];
+  if (subnets) {
+    subnets.forEach( e => subnet(resourses, e));
+  }
+
   let responseCode = 200;
 
   let response = {
@@ -228,13 +233,11 @@ function makeNameFromTags(e, defaultName) {
   let name = "";
   if (e.Tags) {
     let len = e.Tags.length;
-    for( i=0;i< len;i++)
-    {
-      let tag=e.Tags[i];
+    for (i = 0; i < len; i++) {
+      let tag = e.Tags[i];
 
-      if( tag.Key == "Name")
-      {
-        name=tag.Value;
+      if (tag.Key == "Name") {
+        name = tag.Value;
         break;
       }
     }
@@ -251,16 +254,45 @@ let vpcCount = 0;
 function virtualPrivateCloud(resources, e) {
 
   vpcCount++;
-  let name = makeNameFromTags(e, "vpc" + vpcCount);
+  let name = makeNameFromTags(e, "" + vpcCount);
 
   let resource = {};
   resource.Type = "AWS::EC2::VPC";
   let p = {};
   resource.Properties = p;
 
-  p.CidrBlock=e.CidrBlock;
-  p.InstanceTenancy=e.InstanceTenancy;
+  p.CidrBlock = e.CidrBlock;
+  p.InstanceTenancy = e.InstanceTenancy;
   copyTags(e, p);
 
   resources['vpc' + safeName(name)] = resource;
+}
+
+let subnetCount = 0;
+
+function subnet(resources, e) {
+  subnetCount++;
+  let name = makeNameFromTags(e, "" + subnetCount);
+  let resource = {};
+  resource.Type = "AWS::EC2::Subnet";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+
+  const removeItems = [
+    "Tags",
+    "AvailabilityZoneId",
+    "AvailableIpAddressCount",
+    "DefaultForAz",
+    "State",
+    "SubnetId",
+    "OwnerId",
+    "Ipv6CidrBlockAssociationSet",
+    "SubnetArn"
+  ];
+  removeItems.forEach(key => delete p[key]);
+
+  copyTags(e, p);
+
+  resources['subnet' + safeName(name)] = resource;
 }
