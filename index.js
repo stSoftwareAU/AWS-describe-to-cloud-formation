@@ -49,6 +49,12 @@ exports.handler = async (event) => {
     subnets.forEach( e => subnet(resourses, e));
   }
 
+
+  let listeners = event['Listeners'];
+  if (listeners) {
+    listeners.forEach( e => listener(resourses, e));
+  }
+  
   let responseCode = 200;
 
   let response = {
@@ -219,6 +225,9 @@ function autoScaleGroup(resources, e) {
   let p = JSON.parse(JSON.stringify(e));
   resource.Properties = p;
 
+  p.MixedInstancesPolicy.InstancesDistribution=p.InstancesDistribution;
+  //delete p['InstancesDistribution'];
+
   const removeItems = ["Tags", "AutoScalingGroupARN", "TargetGroupARNs", "SuspendedProcesses", "EnabledMetrics", "DefaultCooldown", "Instances", "CreatedTime", "NewInstancesProtectedFromScaleIn"];
   removeItems.forEach(key => delete p[key]);
 
@@ -233,7 +242,7 @@ function makeNameFromTags(e, defaultName) {
   let name = "";
   if (e.Tags) {
     let len = e.Tags.length;
-    for (i = 0; i < len; i++) {
+    for (let i = 0; i < len; i++) {
       let tag = e.Tags[i];
 
       if (tag.Key == "Name") {
@@ -295,4 +304,23 @@ function subnet(resources, e) {
   copyTags(e, p);
 
   resources['subnet' + safeName(name)] = resource;
+}
+
+let listenerCount = 0;
+
+function listener(resources, e) {
+  let resource = {};
+  resource.Type = "AWS::ElasticLoadBalancingV2::Listener";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+
+  const removeItems = [
+    "ListenerArn"
+  ];
+  removeItems.forEach(key => delete p[key]);
+  listenerCount++;
+  let match = e.LoadBalancerArn.match( /.*\/([a-zA-Z0-9]+)\/[a-z0-9A-Z]+/);
+  let name=match[1] + listenerCount;
+  resources['listener' + safeName(name)] = resource;
 }
