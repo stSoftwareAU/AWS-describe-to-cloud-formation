@@ -54,7 +54,11 @@ exports.handler = async (event) => {
   if (listeners) {
     listeners.forEach( e => listener(resourses, e));
   }
-  
+    
+  let targetGroups = event['TargetGroups'];
+  if (targetGroups) {
+    targetGroups.forEach( e => targetGroup(resourses, e));
+  }
   let responseCode = 200;
 
   let response = {
@@ -321,4 +325,26 @@ function listener(resources, e) {
   let match = e.LoadBalancerArn.match( /.*\/([a-zA-Z0-9]+)\/[a-z0-9A-Z]+/);
   let name=match[1] + e.Port;
   resources['listener' + safeName(name)] = resource;
+}
+
+
+
+function targetGroup(resources, e) {
+  let resource = {};
+  resource.Type = "AWS::ElasticLoadBalancingV2::TargetGroup";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+  p.Name=e.TargetGroupName;
+  
+  const removeItems = [
+    "ListenerArn",
+    "TargetGroupName",
+    
+  ];
+  removeItems.forEach(key => delete p[key]);
+  
+  copyTags(e, p);
+  
+  resources['targetGroup' + safeName(p.Name)] = resource;
 }
