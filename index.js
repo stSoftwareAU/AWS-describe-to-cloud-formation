@@ -306,8 +306,6 @@ function subnet(resources, e) {
   resources['subnet' + safeName(name)] = resource;
 }
 
-let listenerCount = 0;
-
 function listener(resources, e) {
   let resource = {};
   resource.Type = "AWS::ElasticLoadBalancingV2::Listener";
@@ -319,8 +317,8 @@ function listener(resources, e) {
     "ListenerArn"
   ];
   removeItems.forEach(key => delete p[key]);
-  listenerCount++;
+  
   let match = e.LoadBalancerArn.match( /.*\/([a-zA-Z0-9]+)\/[a-z0-9A-Z]+/);
-  let name=match[1] + listenerCount;
+  let name=match[1] + e.Port;
   resources['listener' + safeName(name)] = resource;
 }
