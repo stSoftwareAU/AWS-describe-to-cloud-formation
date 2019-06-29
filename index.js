@@ -59,6 +59,11 @@ exports.handler = async (event) => {
   if (targetGroups) {
     targetGroups.forEach( e => targetGroup(resourses, e));
   }
+  
+  let tmpUserPool = event['UserPool'];
+  if (tmpUserPool) {
+     userPool(resourses, tmpUserPool);
+  }
   let responseCode = 200;
 
   let response = {
@@ -348,3 +353,39 @@ function targetGroup(resources, e) {
   
   resources['targetGroup' + safeName(p.Name)] = resource;
 }
+
+
+function userPool(resources, e) {
+  let resource = {};
+  resource.Type = "AWS::Cognito::UserPool";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+  p.UserPoolName=e.Name;
+  p.Schema=e.SchemaAttributes.filter( item => item.Name != "phone_number_verified");
+  p.Schema=p.Schema.map( item => {
+    let tmp=Object.assign( {}, item);
+    
+    if( tmp.Name.startsWith( "custom:")){
+      tmp.Name=tmp.Name.substring( 7);
+    }
+    return tmp;});
+  // p.AdminCreateUserConfig.UnusedAccountValidityDays=p.AdminCreateUserConfig.UnusedAccountValidityDays;
+  delete p.AdminCreateUserConfig["UnusedAccountValidityDays"];
+  const removeItems = [
+    "Id",
+    "Name",
+    "LastModifiedDate",
+    "CreationDate",
+    "SchemaAttributes",
+    "EstimatedNumberOfUsers",
+    "Arn",
+    "VerificationMessageTemplate"
+  ];
+  removeItems.forEach(key => delete p[key]);
+  
+  copyTags(e, p);
+  
+  resources['userPool' + safeName(p.UserPoolName)] = resource;
+}
+
