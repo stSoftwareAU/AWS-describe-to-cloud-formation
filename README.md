@@ -15,3 +15,4 @@ curl -X POST https://2d8ayd4x0e.execute-api.ap-southeast-2.amazonaws.com/test -d
 5. aws ec2 describe-subnets
 6. aws elbv2 describe-listeners
 7. aws cognito-idp describe-user-pool --user-pool-id  ap-southeast-xxxxxxxxx
+8. aws dynamodb describe-table --table-name test
