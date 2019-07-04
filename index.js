@@ -64,6 +64,11 @@ exports.handler = async (event) => {
   if (tmpUserPool) {
      userPool(resourses, tmpUserPool);
   }
+  
+  let tmpTable = event['Table'];
+  if (tmpTable) {
+     dynamodbTable(resourses, tmpTable);
+  }
   let responseCode = 200;
 
   let response = {
@@ -72,7 +77,7 @@ exports.handler = async (event) => {
     //        body: JSON.stringify(responseBody)
     body: responseBody
   };
-  console.log("response: " + JSON.stringify(response))
+  console.log("response: " + JSON.stringify(response));
   return response;
 };
 
@@ -389,3 +394,71 @@ function userPool(resources, e) {
   resources['userPool' + safeName(p.UserPoolName)] = resource;
 }
 
+
+function fixProvisionedThroughput( item)
+{
+  delete item.ProvisionedThroughput["NumberOfDecreasesToday"];
+  
+  if( item.ProvisionedThroughput.ReadCapacityUnits==0 && item.ProvisionedThroughput.WriteCapacityUnits==0 )
+  {
+    delete item["ProvisionedThroughput"];
+  }
+}
+
+function dynamodbTable(resources, e) {
+  let resource = {};
+  resource.Type = "AWS::DynamoDB::Table";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+
+  if( p.ProvisionedThroughput)
+  {
+    fixProvisionedThroughput( p);
+  }
+  
+  if( p.BillingModeSummary.BillingMode)
+  {
+    p.BillingMode=p.BillingModeSummary.BillingMode;
+  }
+  
+  const removeItems = [
+    "TableStatus",
+    "CreationDateTime",
+    "TableSizeBytes",
+    "ItemCount",
+    "TableArn",
+    "TableId",
+    "BillingModeSummary"
+  ];
+  removeItems.forEach(key => delete p[key]);
+  
+  const removeIndexItems=[
+    "IndexStatus",
+    "IndexSizeBytes",
+    "ItemCount",
+    "IndexArn"
+  ];
+  if( p.GlobalSecondaryIndexes)
+  {
+    p.GlobalSecondaryIndexes.forEach( item => {
+        removeIndexItems.forEach(key => delete item[key]);
+        fixProvisionedThroughput( item);
+      }
+    );
+  }
+  
+  if( p.LocalSecondaryIndexes)
+  {
+    p.LocalSecondaryIndexes.forEach( item => {
+        removeIndexItems.forEach(key => delete item[key]);
+        fixProvisionedThroughput( item);
+      }
+    );
+  }
+  
+  removeItems.forEach(key => delete p[key]);
+  copyTags(e, p);
+  
+  resources['table' + safeName(p.TableName)] = resource;
+}
