@@ -481,15 +481,19 @@ function stateMachine(resources, e) {
       a
       ]
   };
+  p.StateMachineName=p.name;
+  p.RoleArn=p.roleArn;
   const removeItems = [
     "stateMachineArn",
     "creationDate",
     "status",
+    "roleArn",
+    "name",
     "definition"
   ];
   removeItems.forEach(key => delete p[key]);
   
   copyTags(e, p);
   
-  resources['stateMachine' + safeName(p.name)] = resource;
+  resources['stateMachine' + safeName(p.StateMachineName)] = resource;
 }
