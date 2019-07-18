@@ -69,6 +69,11 @@ exports.handler = async (event) => {
   if (tmpTable) {
      dynamodbTable(resourses, tmpTable);
   }
+  
+  if( event.stateMachineArn){
+    stateMachine(resourses, event);
+  }
+  
   let responseCode = 200;
 
   let response = {
@@ -461,4 +466,30 @@ function dynamodbTable(resources, e) {
   copyTags(e, p);
   
   resources['table' + safeName(p.TableName)] = resource;
+}
+
+function stateMachine(resources, e) {
+  let resource = {};
+  resource.Type = "AWS::StepFunctions::StateMachine";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+  let a = p.definition.split("\n");
+  p.DefinitionString={
+      "Fn::Join": [
+      "\\n",
+      a
+      ]
+  };
+  const removeItems = [
+    "stateMachineArn",
+    "creationDate",
+    "status",
+    "definition"
+  ];
+  removeItems.forEach(key => delete p[key]);
+  
+  copyTags(e, p);
+  
+  resources['stateMachine' + safeName(p.name)] = resource;
 }
