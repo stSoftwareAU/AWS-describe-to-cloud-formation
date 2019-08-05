@@ -74,6 +74,10 @@ exports.handler = async (event) => {
     stateMachine(resourses, event);
   }
   
+  if( event.Distribution)
+  {
+    cloudFrontDistribution( resourses, event.Distribution);
+  }
   let responseCode = 200;
 
   let response = {
@@ -496,4 +500,55 @@ function stateMachine(resources, e) {
   copyTags(e, p);
   
   resources['stateMachine' + safeName(p.StateMachineName)] = resource;
+}
+
+function cloudFrontDistribution(resources, e) {
+  let resource = {};
+  resource.Type = "AWS::CloudFront::Distribution";
+
+  let p = JSON.parse(JSON.stringify(e));
+  resource.Properties = p;
+
+  const removeItems = [
+    "Id",
+    "ARN",
+    "Status",
+    "LastModifiedTime",
+    "InProgressInvalidationBatches",
+    "AliasICPRecordals",
+    "ActiveTrustedSigners",
+    "DomainName"
+  ];
+  removeItems.forEach(key => delete p[key]);
+
+  if( p.DistributionConfig)
+  {
+    const removeDistributionConfigItems=[
+      "OriginGroups",
+      "IsIPV6Enabled",
+      "CallerReference"
+    ];
+    
+    removeDistributionConfigItems.forEach(key => delete p.DistributionConfig[key]);
+  }
+  
+  if( p.DistributionConfig && p.DistributionConfig.Logging)
+  {
+    if( ! p.DistributionConfig.Logging.Enabled)
+    {
+      delete p.DistributionConfig.Logging;
+    }
+    else
+    {
+      delete p.DistributionConfig.Logging.Enabled;
+    }
+  }
+  
+  let items=p.DistributionConfig.Origins.Items;
+  items.forEach( item => delete item['CustomHeaders']);
+  
+  p.DistributionConfig.Origins=items;
+  copyTags(e, p); 
+  
+  resources['Distribution' + safeName("")] = resource;
 }
