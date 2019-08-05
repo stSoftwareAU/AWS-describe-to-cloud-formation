@@ -17,3 +17,4 @@ curl -X POST https://2d8ayd4x0e.execute-api.ap-southeast-2.amazonaws.com/test -d
 7. aws cognito-idp describe-user-pool --user-pool-id  ap-southeast-xxxxxxxxx
 8. aws dynamodb describe-table --table-name test
 9. aws stepfunctions  describe-state-machine --state-machine-arn arn:aws:states:ap-southeast-2:1234567890:stateMachine:xxxxxx
+10. aws cloudfront get-distribution --id XXXXXX
