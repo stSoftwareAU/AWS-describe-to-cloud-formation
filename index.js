@@ -1,6 +1,6 @@
 exports.handler = async (event) => {
 
-  console.info(event);
+  console.info(JSON.stringify(event,null,2));
 
   let resourses = {};
 
@@ -49,7 +49,6 @@ exports.handler = async (event) => {
     subnets.forEach( e => subnet(resourses, e));
   }
 
-
   let listeners = event['Listeners'];
   if (listeners) {
     listeners.forEach( e => listener(resourses, e));
@@ -86,7 +85,7 @@ exports.handler = async (event) => {
     //        body: JSON.stringify(responseBody)
     body: responseBody
   };
-  console.log("response: " + JSON.stringify(response));
+  console.log("response: " + JSON.stringify(response,null,2));
   return response;
 };
 
@@ -544,10 +543,147 @@ function cloudFrontDistribution(resources, e) {
     }
   }
   
+  let vc=p.DistributionConfig.ViewerCertificate;
+  // console.log( "VC:", vc);
+  if( vc)
+  {
+    vc.AcmCertificateArn=vc.ACMCertificateArn;
+    delete vc.ACMCertificateArn;
+    vc.SslSupportMethod=vc.SSLSupportMethod;
+    delete vc.SSLSupportMethod;
+    delete vc.Certificate;
+    delete vc.CertificateSource;
+  }
   let items=p.DistributionConfig.Origins.Items;
-  items.forEach( item => delete item['CustomHeaders']);
   
+  items.forEach( item => {delete item.CustomHeaders});
   p.DistributionConfig.Origins=items;
+  if(p.DistributionConfig.DefaultCacheBehavior)
+  {
+    let dcb=p.DistributionConfig.DefaultCacheBehavior;
+    if(dcb.LambdaFunctionAssociations )
+    {
+      items=dcb.LambdaFunctionAssociations.Items;
+      
+      if( items )
+      {
+        dcb.LambdaFunctionAssociations=items;
+      }
+      else
+      {
+        delete dcb.LambdaFunctionAssociations;
+      }
+    }
+    
+    if( dcb.TrustedSigners)
+    {
+      items=dcb.TrustedSigners.Items;
+      
+      if( items )
+      {
+        dcb.TrustedSigners=items;
+      }
+      else
+      {
+        delete dcb.TrustedSigners;
+      }
+    }
+    
+    if( dcb.AllowedMethods)
+    {
+      items=dcb.AllowedMethods.Items;
+      
+      if( items )
+      {
+        dcb.AllowedMethods=items;
+      }
+      else
+      {
+        delete dcb.AllowedMethods;
+      }
+    }
+    
+    if( dcb.ForwardedValues)
+    {
+      let fv=dcb.ForwardedValues;
+      
+      if( fv.Headers)
+      {
+        items=fv.Headers.Items;
+        if( items )
+        {
+          fv.Headers=items;
+        }
+        else
+        {
+          delete fv.Headers;
+        }
+      }
+      if( fv.QueryStringCacheKeys)
+      {
+        items=fv.QueryStringCacheKeys.Items;
+        if( items )
+        {
+          fv.QueryStringCacheKeys=items;
+        }
+        else
+        {
+          delete fv.QueryStringCacheKeys;
+        }
+      }
+    }
+  }
+  
+  if( p.DistributionConfig.CustomErrorResponses)
+  {
+    let items = p.DistributionConfig.CustomErrorResponses.Items;
+    if( items)
+    {
+      p.DistributionConfig.CustomErrorResponses=items;
+    }
+    else
+    {
+      delete p.DistributionConfig.CustomErrorResponses;
+    }
+  }
+   
+  if( p.DistributionConfig.Aliases)
+  {
+    let items = p.DistributionConfig.Aliases.Items;
+    if( items)
+    {
+      p.DistributionConfig.Aliases=items;
+    }
+    else
+    {
+      delete p.DistributionConfig.Aliases;
+    }
+  }
+  
+  if( p.DistributionConfig.CacheBehaviors)
+  {
+    let items = p.DistributionConfig.CacheBehaviors.Items;
+    if( items)
+    {
+      p.DistributionConfig.CacheBehaviors=items;
+    }
+    else
+    {
+      delete p.DistributionConfig.CacheBehaviors;
+    }
+  }
+  
+  if( p.DistributionConfig.Restrictions && p.DistributionConfig.Restrictions.GeoRestriction )
+  {
+    let gr=p.DistributionConfig.Restrictions.GeoRestriction;
+    delete gr.Quantity;
+    let items=gr.Items;
+    if( items)
+    {
+      gr.Locations=items;
+      delete gr.Items;
+    }
+  }
   copyTags(e, p); 
   
   resources['Distribution' + safeName("")] = resource;
