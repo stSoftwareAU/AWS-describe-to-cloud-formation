@@ -633,7 +633,110 @@ function cloudFrontDistribution(resources, e) {
       }
     }
   }
+  if(Array.isArray(p.DistributionConfig.Origins))
+  {
+    p.DistributionConfig.Origins.forEach( origin => {
+      if( origin.CustomOriginConfig)
+      {
+        if( origin.CustomOriginConfig.OriginSslProtocols)
+        {
+          let item=origin.CustomOriginConfig.OriginSslProtocols.Items;
+          
+          if( item)
+          {
+            origin.CustomOriginConfig.OriginSSLProtocols=item;
+          }
+          
+          delete origin.CustomOriginConfig.OriginSslProtocols;
+        }
+      }
+    });
+  }
+  if(Array.isArray(p.DistributionConfig.CacheBehaviors))
+  {
+    p.DistributionConfig.CacheBehaviors.forEach( cb => {
+      
+      if( cb.ForwardedValues){
+        console.log( cb.ForwardedValues);
+        let fv=cb.ForwardedValues;
+        if(fv.Headers )
+        {
+          items=fv.Headers.Items;
+          
+          if( items )
+          {
+            fv.Headers=items;
+          }
+          else
+          {
+            delete fv.Headers;
+          }
+        }
+        
+        if( fv.QueryStringCacheKeys)
+        {
+          items=fv.QueryStringCacheKeys.Items;
+          
+          if( items )
+          {
+            fv.QueryStringCacheKeys=items;
+          }
+          else
+          {
+            delete fv.QueryStringCacheKeys;
+          }
+        }
+      }
+          
+      if( cb.TrustedSigners)
+      {
+        items=cb.TrustedSigners.Items;
+        
+        if( items )
+        {
+          cb.TrustedSigners=items;
+        }
+        else
+        {
+          delete cb.TrustedSigners;
+        }
+      }
+      
+      if( cb.AllowedMethods)
+      {
+        if( cb.AllowedMethods.CachedMethods)
+        {
+          items=cb.AllowedMethods.CachedMethods.Items;
+          if( items)
+          {
+            cb.CachedMethods=items;
+          }
+        }
+        items=cb.AllowedMethods.Items;
+        
+        if( items )
+        {
+          cb.AllowedMethods=items;
+        }
+        else
+        {
+          delete cb.AllowedMethods;
+        }
+      }
+      
+      if( cb.LambdaFunctionAssociations)
+      {
+        let items=cb.LambdaFunctionAssociations.Items;
+        
+        if( items)
+        {
+          cb.LambdaFunctionAssociations=items;
   
+        }
+  
+      }
+    });
+  }
   if( p.DistributionConfig.CustomErrorResponses)
   {
     let items = p.DistributionConfig.CustomErrorResponses.Items;
