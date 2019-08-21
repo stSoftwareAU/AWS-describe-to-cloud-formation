@@ -1,3 +1,7 @@
+/**
+ * Author: Nigel Leck
+ * https://github.com/stSoftwareAU/AWS-describe-to-CloudFormation
+ */
 exports.handler = async (event) => {
 
   console.info(JSON.stringify(event,null,2));
